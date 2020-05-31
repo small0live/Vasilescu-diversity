@@ -2,6 +2,7 @@
 
 library(data.table) 
 library(ggplot2)
+library(ggpubr)
 library(magrittr)
 #library(scales)
 library(tidyverse)
@@ -42,10 +43,10 @@ lang <- lang[c(1:2,4:11,3),]
 
 lang$language <- factor(lang$language, levels = lang$language)
 
-png(filename="barPlots_allProjects_Language.png",
-    width=1500, height=1000,
-    units="px", res=330)
-ggplot(lang, 
+#png(filename="barPlots_allProjects_Language.png",
+#    width=1500, height=1000,
+#    units="px", res=330)
+langPlot <- ggplot(lang, 
        aes(x = factor(language),
            y = Count)) +
   geom_bar(stat = "identity",
@@ -55,14 +56,16 @@ ggplot(lang,
            alpha = .9) +
   coord_flip() +
   scale_x_discrete(limits = rev(levels(lang$language))) +
-  ggtitle("Programming Language") +
+  ggtitle("Language") +
   ylab("") +
   xlab("") +
-  theme(panel.background=element_rect(fill = "white", 
+  theme(
+    text = element_text(family = "mono"),
+    panel.background=element_rect(fill = "white", 
                                       color = "slategray"),
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_line(color="gray88"))
-dev.off()
+#dev.off()
 
 
 
@@ -100,10 +103,10 @@ contributors <- contributors[c(4,6:8,10:13,2,5,9,3,1),]
 
 contributors$contributors <- factor(contributors$contributors, levels = contributors$contributors)
 
-png(filename="barPlots_allProjects_12moContributors.png",
-    width=1500, height=1000,
-    units="px", res=330)
-ggplot(contributors, 
+#png(filename="barPlots_allProjects_12moContributors.png",
+#    width=1500, height=1000,
+#    units="px", res=330)
+teamPlot <- ggplot(contributors, 
        aes(x = factor(contributors),
            y = Count)) +
   geom_bar(stat = "identity",
@@ -113,14 +116,15 @@ ggplot(contributors,
            alpha = .9) +
   coord_flip() +
   scale_x_discrete(limits = rev(levels(contributors$contributors))) +
-  ggtitle("Contributors (12 mos)") +
+  ggtitle("Contributors") +
   ylab("") +
   xlab("") +
-  theme(panel.background=element_rect(fill = "white", 
+  theme(text = element_text(family = "mono"),
+        panel.background=element_rect(fill = "white", 
                                       color = "slategray"),
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_line(color="gray88"))
-dev.off()
+#dev.off()
   
 
 
@@ -153,10 +157,10 @@ commits <- commits[c(2,10,4:9,3,1),]
 
 commits$commits <- factor(commits$commits, levels = commits$commits)
 
-png(filename="barPlots_allProjects_12moCommits.png",
-    width=1500, height=1000,
-    units="px", res=330)
-ggplot(commits, 
+#png(filename="barPlots_allProjects_12moCommits.png",
+#    width=1500, height=1000,
+#    units="px", res=330)
+commitPlot <- ggplot(commits, 
        aes(x = commits,
            y = Count)) +
   geom_bar(stat = "identity",
@@ -166,14 +170,15 @@ ggplot(commits,
            alpha = .9) +
   coord_flip() +
   scale_x_discrete(limits = rev(levels(commits$commits))) +
-  ggtitle("Commits (12 mos)") +
+  ggtitle("Commits") +
   ylab("") +
   xlab("") +
-  theme(panel.background=element_rect(fill = "white", 
+  theme(text = element_text(family = "mono"),
+    panel.background=element_rect(fill = "white", 
                                       color = "slategray"),
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_line(color="gray88"))
-dev.off()
+#dev.off()
 
 
 # Forks -------------------------------------------------------------------
@@ -199,10 +204,10 @@ forks <- forks[c(2,8,3:7,1),]
 
 forks$num_forks <- factor(forks$num_forks, levels = forks$num_forks)
 
-png(filename="barPlots_allProjects_Forks.png",
-    width=1500, height=1000,
-    units="px", res=330)
-ggplot(forks, 
+#png(filename="barPlots_allProjects_Forks.png",
+#    width=1500, height=1000,
+#    units="px", res=330)
+forkPlot <- ggplot(forks, 
        aes(x = num_forks,
            y = Count)) +
   geom_bar(stat = "identity",
@@ -215,11 +220,12 @@ ggplot(forks,
   ggtitle("Forks") +
   ylab("") +
   xlab("") +
-  theme(panel.background=element_rect(fill = "white", 
+  theme(text = element_text(family = "mono"),
+        panel.background=element_rect(fill = "white", 
                                       color = "slategray"),
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_line(color="gray88"))
-dev.off()
+#dev.off()
 
 
 
@@ -247,10 +253,10 @@ watchers <- watchers[c(2,8,3:7,1),]
 watchers$num_watch <- factor(watchers$num_watch, levels = watchers$num_watch)
 
 
-png(filename="barPlots_allProjects_Watchers.png",
-    width=1500, height=1000,
-    units="px", res=330)
-ggplot(watchers, 
+#png(filename="barPlots_allProjects_Watchers.png",
+#    width=1500, height=1000,
+#    units="px", res=330)
+watchPlot <- ggplot(watchers, 
        aes(x = num_watch,
            y = Count)) +
   geom_bar(stat = "identity",
@@ -263,11 +269,12 @@ ggplot(watchers,
   ggtitle("Watchers") +
   ylab("") +
   xlab("") +
-  theme(panel.background=element_rect(fill = "white", 
+  theme(text = element_text(family = "mono"),
+        panel.background=element_rect(fill = "white", 
                                       color = "slategray"),
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_line(color="gray88"))
-dev.off()
+#dev.off()
 
 
 
@@ -288,10 +295,10 @@ projectAge <- projectAge[c(1,12,18:24,2:11,13:17),]
 
 projectAge$project_age <- factor(projectAge$project_age, levels = projectAge$project_age)
 
-png(filename="barPlots_allProjects_Age.png",
-    width=1500, height=1000,
-    units="px", res=330)
-ggplot(projectAge, 
+#png(filename="barPlots_allProjects_Age.png",
+#    width=1500, height=1000,
+#    units="px", res=330)
+agePlot <- ggplot(projectAge, 
        aes(x = project_age,
            y = Count)) +
   geom_bar(stat = "identity",
@@ -301,14 +308,35 @@ ggplot(projectAge,
            alpha = .9) +
   coord_flip() +
   scale_x_discrete(limits = rev(levels(projectAge$project_age))) +
-  ggtitle("Project Age") +
+  ggtitle("Project Age (1 = 3 mos)") +
   ylab("") +
   xlab("") +
-  theme(panel.background = element_rect(fill = "white", 
+  theme(text = element_text(family = "mono"),
+        panel.background = element_rect(fill = "white", 
                                       color = "slategray"),
         panel.grid.minor.y = element_blank(),
         panel.grid.major.y = element_line(color="gray88")) 
+#dev.off()
+
+
+
+
+# Arrange Plots Together --------------------------------------------------
+
+png(filename="universeDimensionsDist_Population1.png",
+    width=5400, height=1200,
+    units="px", res=330)
+ggarrange(langPlot, teamPlot, commitPlot,
+          ncol = 3,
+          #nrow = 2,
+          align = "h")
 dev.off()
 
-
-
+png(filename="universeDimensionsDist_Population2.png",
+    width=5400, height=1200,
+    units="px", res=330)
+ggarrange(forkPlot, watchPlot, agePlot,
+          ncol = 3,
+          #nrow = 2,
+          align = "h")
+dev.off()

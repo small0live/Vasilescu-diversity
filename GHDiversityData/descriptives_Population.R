@@ -9,6 +9,7 @@
 
 library(data.table) 
 library(ggplot2)
+library(ggpubr)
 library(magrittr)
 library(scales)
 library(tidyverse)
@@ -17,20 +18,21 @@ library(tidyverse)
 
 setwd("~/Documents/GitHub/Vasilescu-diversity/GHDiversityData")
 
-myDF <- fread("wmxn_user_data.csv") 
+#myDF <- fread("wmxn_user_data.csv") 
+myDF <- fread("user_data.csv") 
 
 #myDF <- myDF %>%
 #  subset(language != "None")
 
 # Team Size Descriptives --------------------------------------------------
 
-myDF <- myDF %>%
-  mutate(teamSize =  ## team size bins: 2	3-5	6-9	10+
-           ifelse(num_team <= 2, "2",
-                  ifelse(num_team > 2 & num_team < 6, "3 to 5",
-                         ifelse(num_team > 5 & num_team < 10, "6 to 9", 
-                                ifelse(num_team > 9 & num_team < 16, "10 to 15", "16 or more"
-                                ))))#,
+#myDF <- myDF %>%
+#  mutate(teamSize =  ## team size bins: 2	3-5	6-9	10+
+#           ifelse(num_team <= 2, "2",
+#                  ifelse(num_team > 2 & num_team < 6, "3 to 5",
+#                         ifelse(num_team > 5 & num_team < 10, "6 to 9", 
+#                                ifelse(num_team > 9 & num_team < 16, "10 to 15", "16 or more"
+#                                ))))#,
          #commitSize = ## project size bins: 1-10 11-100 101-500 500-1000 1001-5000 5000-10000 10001-15000 15001-25000
          #  ifelse(num_commits < 11, 10,
          #         ifelse(num_commits > 10 & num_commits < 101, 100,
@@ -40,7 +42,7 @@ myDF <- myDF %>%
          #                                     ifelse(num_commits > 5000 & num_commits < 10001, 10000,
          #                                            ifelse(num_commits > 10000 & num_commits < 15001, 15000, 25000
          #                                            )))))))
-         )
+         #)
          
 teamSizes <- myDF %>%
   subset(select = c("project_id",
@@ -179,72 +181,85 @@ qqnorm(idktenureCounts$github_tenure, pch = 1, frame = FALSE, main = "Normal Q-Q
 qqline(idktenureCounts$github_tenure, col = "goldenrod", lwd = 2)
 dev.off()
 
-png(filename="platformTenure_femaleUsers.png",
-    width=1500, height=1000,
-    units="px", res=330)
-ggplot(ftenureCounts,
+#png(filename="platformTenure_femaleUsers.png",
+#    width=1500, height=1000,
+#    units="px", res=330)
+laydees <- ggplot(ftenureCounts,
        aes(x = github_tenure)) +
   geom_histogram(binwidth = 30,
                  lwd = .2, 
                  color = "gray28",
                  fill = "goldenrod3", 
                  alpha = .8) + 
-  ggtitle("Female Users") +
+  ggtitle("Women") +
   #labs(subtitle = "5,524 unique accounts identified as female") +
   xlab("Tenure (in days)") +
   ylab("Number of Users") +
-  theme(legend.position = "none",
+  theme(
+    text = element_text(family = "mono"),
+    legend.position = "none",
     panel.background=element_rect(fill = "white", color = "slategray"),
     panel.grid.minor.y=element_line(color="gray88"),
     panel.grid.major.y=element_line(color="gray88"))
-dev.off()
-
-png(filename="platformTenure_maleUsers.png",
-    width=1500, height=1000,
-    units="px", res=330)
-ggplot(mtenureCounts,
+#dev.off()
+#
+#png(filename="platformTenure_maleUsers.png",
+#    width=1500, height=1000,
+#    units="px", res=330)
+mens <- ggplot(mtenureCounts,
        aes(x = github_tenure)) +
   geom_histogram(binwidth = 30,
                  lwd = .2, 
                  color = "gray28",
                  fill = "goldenrod3", 
                  alpha = .8) + 
-  ggtitle("Male Users") +
+  ggtitle("Men") +
   #labs(subtitle = "58,216 unique accounts identified as male") +
   #xlab("Tenure (in days)") +
   xlab("") +
   ylab("Number of Users") +
-  theme(legend.position = "none",
-        panel.background=element_rect(fill = "white", color = "slategray"),
-        panel.grid.minor.y=element_line(color="gray88"),
-        panel.grid.major.y=element_line(color="gray88"))
-dev.off()
+  theme(
+    text = element_text(family = "mono"),
+    legend.position = "none",
+    panel.background=element_rect(fill = "white", color = "slategray"),
+    panel.grid.minor.y=element_line(color="gray88"),
+    panel.grid.major.y=element_line(color="gray88"))
+#dev.off()
 
-png(filename="platformTenure_unknownUsers.png",
-    width=1500, height=1000,
-    units="px", res=330)
-ggplot(idktenureCounts,
+#png(filename="platformTenure_unknownUsers.png",
+#    width=1500, height=1000,
+#    units="px", res=330)
+whodat <- ggplot(idktenureCounts,
        aes(x = github_tenure)) +
   geom_histogram(binwidth = 30,
                  lwd = .2, 
                  color = "gray28",
                  fill = "goldenrod3", 
                  alpha = .8) + 
-  ggtitle("Users of Unknown Gender") +
+  ggtitle("Unknown Gender Contributors") +
   #labs(subtitle = "15,056 unique accounts with no specified or identifiable gender") +
   xlab("Tenure (in days)") +
   ylab("Number of Users") +
-  theme(legend.position = "none",
+  theme(text = element_text(family = "mono"),
+    legend.position = "none",
         panel.background=element_rect(fill = "white", color = "slategray"),
         panel.grid.minor.y=element_line(color="gray88"),
         panel.grid.major.y=element_line(color="gray88"))
+#dev.off()
+
+fig <- ggarrange(laydees + rremove("xlab"), mens + rremove("ylab"), whodat + rremove("ylab") + rremove("xlab"),
+         labels = c("A", "B", "C"),
+         nrow = 1,
+         align = "h")
+
+png(filename="platformTenure_allGroups.png",
+    width=3400, height=990,
+    units="px", res=330)
+annotate_figure(fig,
+                bottom = text_grob("GitHub Tenure (days)",
+                                   family = "mono"))
 dev.off()
-
-
-
 # Platform Tenure Correlation ---------------------------------------------
-
-
 
 
 # Project Age + Domain Descriptives/Plots -------------------------------------------------------------

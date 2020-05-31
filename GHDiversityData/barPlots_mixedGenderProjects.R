@@ -40,10 +40,10 @@ lang <- lang[c(1:3,5:11,4),]
 
 lang$language <- factor(lang$language, levels = lang$language)
 
-png(filename="barPlots_mixedGenderProjects_Language.png",
-    width=1500, height=1000,
-    units="px", res=330)
-ggplot(lang, 
+#png(filename="barPlots_mixedGenderProjects_Language.png",
+#    width=1500, height=1000,
+#    units="px", res=330)
+langPlot <- ggplot(lang, 
        aes(x = factor(language),
            y = Count)) +
   geom_bar(stat = "identity",
@@ -60,9 +60,7 @@ ggplot(lang,
                                       color = "slategray"),
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_line(color="gray88"))
-dev.off()
-
-
+#dev.off()
 
 
 
@@ -98,10 +96,10 @@ contributors <- contributors[c(4,6:8,10:13,2,5,9,3,1),]
 
 contributors$contributors <- factor(contributors$contributors, levels = contributors$contributors)
 
-png(filename="barPlots_mixedGenderProjects_12moContributors.png",
-    width=1500, height=1000,
-    units="px", res=330)
-ggplot(contributors, 
+#png(filename="barPlots_mixedGenderProjects_12moContributors.png",
+#    width=1500, height=1000,
+#    units="px", res=330)
+teamPlot <- ggplot(contributors, 
        aes(x = factor(contributors),
            y = Count)) +
   geom_bar(stat = "identity",
@@ -118,7 +116,7 @@ ggplot(contributors,
                                       color = "slategray"),
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_line(color="gray88"))
-dev.off()
+#dev.off()
 
 
 
@@ -151,10 +149,10 @@ commits <- commits[c(2,10,4:9,3,1),]
 
 commits$commits <- factor(commits$commits, levels = commits$commits)
 
-png(filename="barPlots_mixedGenderProjects_12moCommits.png",
-    width=1500, height=1000,
-    units="px", res=330)
-ggplot(commits, 
+#png(filename="barPlots_mixedGenderProjects_12moCommits.png",
+#    width=1500, height=1000,
+#    units="px", res=330)
+commitPlot <- ggplot(commits, 
        aes(x = commits,
            y = Count)) +
   geom_bar(stat = "identity",
@@ -171,7 +169,7 @@ ggplot(commits,
                                       color = "slategray"),
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_line(color="gray88"))
-dev.off()
+#dev.off()
 
 
 # Forks -------------------------------------------------------------------
@@ -197,10 +195,10 @@ forks <- forks[c(2,8,3:7,1),]
 
 forks$num_forks <- factor(forks$num_forks, levels = forks$num_forks)
 
-png(filename="barPlots_mixedGenderProjects_Forks.png",
-    width=1500, height=1000,
-    units="px", res=330)
-ggplot(forks, 
+#png(filename="barPlots_mixedGenderProjects_Forks.png",
+#    width=1500, height=1000,
+#    units="px", res=330)
+forkPlot <- ggplot(forks, 
        aes(x = num_forks,
            y = Count)) +
   geom_bar(stat = "identity",
@@ -217,7 +215,7 @@ ggplot(forks,
                                       color = "slategray"),
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_line(color="gray88"))
-dev.off()
+#dev.off()
 
 
 
@@ -245,10 +243,10 @@ watchers <- watchers[c(2,8,3:7,1),]
 watchers$num_watch <- factor(watchers$num_watch, levels = watchers$num_watch)
 
 
-png(filename="barPlots_mixedGenderProjects_Watchers.png",
-    width=1500, height=1000,
-    units="px", res=330)
-ggplot(watchers, 
+#png(filename="barPlots_mixedGenderProjects_Watchers.png",
+#    width=1500, height=1000,
+#    units="px", res=330)
+watchPlot <- ggplot(watchers, 
        aes(x = num_watch,
            y = Count)) +
   geom_bar(stat = "identity",
@@ -265,7 +263,7 @@ ggplot(watchers,
                                       color = "slategray"),
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_line(color="gray88"))
-dev.off()
+#dev.off()
 
 
 
@@ -286,10 +284,10 @@ projectAge <- projectAge[c(1,12,18:24,2:11,13:17),]
 
 projectAge$project_age <- factor(projectAge$project_age, levels = projectAge$project_age)
 
-png(filename="barPlots_mixedGenderProjects_Age.png",
-    width=1500, height=1000,
-    units="px", res=330)
-ggplot(projectAge, 
+#png(filename="barPlots_mixedGenderProjects_Age.png",
+#    width=1500, height=1000,
+#    units="px", res=330)
+agePlot <- ggplot(projectAge, 
        aes(x = project_age,
            y = Count)) +
   geom_bar(stat = "identity",
@@ -306,7 +304,25 @@ ggplot(projectAge,
                                         color = "slategray"),
         panel.grid.minor.y = element_blank(),
         panel.grid.major.y = element_line(color="gray88")) 
+#dev.off()
+
+# Arrange Plots Together --------------------------------------------------
+
+png(filename="universeDimensionsDist_wmxn1.png",
+    width=5400, height=1200,
+    units="px", res=330)
+ggarrange(langPlot, teamPlot, commitPlot,
+          ncol = 3,
+          #nrow = 2,
+          align = "h")
 dev.off()
 
-
+png(filename="universeDimensionsDist_wmxn2.png",
+    width=5400, height=1200,
+    units="px", res=330)
+ggarrange(forkPlot, watchPlot, agePlot,
+          ncol = 3,
+          #nrow = 2,
+          align = "h")
+dev.off()
 
