@@ -8,6 +8,7 @@ library(ggplot2)
 library(lattice)
 library(lme4)
 library(tidyverse)
+library(Hmisc)
 
 
 # Import and Subset Data --------------------------------------------------
@@ -51,7 +52,8 @@ impProc <- c("C", "C++", "C#", "Objective-C", "Java", "Go", "Vala")
 impScri <- c("CoffeeScript", "JavaScript", "Python", "Groovy", "Perl", "PHP", "Ruby", "Smalltalk", "TypeScript")
 Funct <- c("Clojure", "Erlang", "Haskell", "Scala", "Emacs Lisp", "Elixir")
 Scri <- c("Shell", "VimL", "Augeas", "PowerShell")
-multiPa <- c("JavaScript", "Lua", "FORTRAN", "R", "ActionScript", "Common Lisp", "Standard ML", "Rust", "Racket", "Matlab", "OCaml", "Julia")
+multiPa <- c("JavaScript", "Lua", "FORTRAN", "R", "ActionScript", "Common Lisp", "Standard ML", "Rust", "Racket", 
+             "Matlab", "OCaml", "Julia", "Dylan")
 markup <- c("CSS", "AUGEUS", "XML")
 
 myDF <- myDF %>%
@@ -178,7 +180,6 @@ TEST <- myDF %>%
 #plot(gen.x,logit(gen.y))
 #
 
-
 # Plot Distributions ------------------------------------------------------
 
 ## user characteristics
@@ -228,21 +229,36 @@ ggplot(myDF,
 
 # Simple Correlations ------------------------------------------------------------
 
-ggpairs(myDF[, c("gender", 
-                 "github_tenure", 
-                 "blau_gender", 
-                 "Gini_gh_ten")])
+modelDF <- myDF %>%
+  mutate(genNum = ifelse(gender == "female", 0,
+                         ifelse(gender == "male", 1, 2)),
+         hasWomEvNum = ifelse(hasWomenEver == TRUE, 1, 0)) %>%
+  subset(select = c("project_id",
+                    "window_idx",
+                    "genNum",
+                    "github_tenure",
+                    "num_team",
+                    "blau_gender",
+                    "Gini_gh_ten",
+                    "hasWomEvNum",
+                    "absent"))
 
-ggpairs(ks.med[, c("gender", "gh_tenure_scaled", "blau_gender", "Gini_gh_ten")])
+cor(modelDF,
+    use = "pairwise.complete.obs"
+    )
 
-ggpairs(ks.large[, c("gender", "gh_tenure_scaled", "blau_gender", "Gini_gh_ten")])
+rcorr(as.matrix(modelDF))
 
-# tmp <- melt(ks.large[, c("leavesNextQ", "gender", "gh_tenure_scaled", "blau_gender", "Gini_gh_ten")],
-#             id.vars="leavesNextQ")
-# 
-# ggplot(tmp, aes(factor(leavesNextQ), y = value, fill=factor(leavesNextQ))) +
-#   geom_boxplot() +
-#   facet_wrap(~variable, scales="free_y")
+ggcorr(modelDF)
+
+#png(filename="pairs.png")
+#ggpairs(modelDF) ## not handling missing values, idk what to do rn
+#dev.off()
+
+png(filename="pairs.png")
+ggparcoord(modelDF,
+           missing = "exclude")
+dev.off()
 
 # Models -------------------------------------------------------------------
 
