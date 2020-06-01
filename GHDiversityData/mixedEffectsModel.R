@@ -286,22 +286,28 @@ dev.off()
 
 
 # Models ------------------------------------------------------------------
+
+
+
 library(lme4)
 modelDF$num_team_scaled <- scale(modelDF$num_team)#[, 1]
 modelDF$num_comments_scaled <- scale(modelDF$num_comments)#[, 1]
 modelDF$num_pull_req_scaled <- scale(modelDF$num_pull_req)#[, 1]
 modelDF$gh_tenure_scaled <- scale(modelDF$github_tenure)#[, 1]
 
-nullModel <- lmer(turnover ~ ( 1| window_idx) + (1| project_id),
-                  data = modelDF,
+modelDFnoNA <- modelDF %>%
+  na.omit()
+
+nullModel <- lmer(turnover ~  (1| project_id),
+                  data = modelDFnoNA,
                   REML = FALSE)
 
 fullModel <- lmer(turnover ~ 
                     hasWomEvNum + 
-                    genNum + 
+                    #genNum + 
                     #github_tenure +
-                    gh_tenure_scaled +
-                    blau_gender + 
+                    #gh_tenure_scaled +
+                    #blau_gender + 
                     Gini_gh_ten + 
                     #num_team +
                     num_team_scaled +
@@ -310,9 +316,10 @@ fullModel <- lmer(turnover ~
                     #num_comments +
                     num_comments_scaled +
                     #(window_idx | project_id),
-                  (1 | project_id) +  
-                  (1 | window_idx),
-                  data = modelDF,
+                  (1 | project_id), 
+                  #+  
+                  #(1 | window_idx),
+                  data = modelDFnoNA,
                   REML = FALSE)
 
 summary(fullModel, corr=FALSE)
@@ -326,6 +333,16 @@ qqnorm(residuals(fullModel))
 
 anova(nullModel, fullModel)
 
+
+r2.corr.mer <- function(m) {
+  lmfit <-  lm(model.response(model.frame(m)) ~ fitted(m))
+  summary(lmfit)$adj.r.squared
+}
+
+r2.corr.mer(fullModel)
+r2.corr.mer(fullModel) - r2.corr.mer(nullModel)
+
+#beta(fullModel)
 
 #old Models -------------------------------------------------------------------
 
