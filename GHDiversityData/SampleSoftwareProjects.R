@@ -586,7 +586,7 @@ mxn.scoreDF <- data.frame(dimNam, dimVal) %>%
   mutate(sampleScore = mxn.scoreValue)
 
 write.csv(mxn.scoreDF,
-          "mxnSample_Scores_TurnoverOutcome.csv",
+          "mxnSmartSample_Scores_TurnoverOutcome.csv",
           row.names = F)
 
 
