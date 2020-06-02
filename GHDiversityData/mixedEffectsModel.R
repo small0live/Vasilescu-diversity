@@ -244,7 +244,8 @@ modelDF <- myDF %>%
                     "num_comments",
                     "blau_gender",
                     "Gini_gh_ten",
-                    "hasWomEvNum",
+                    #"hasWomEvNum",
+                    "hasWomenEver",
                     "turnover"#,
                     #"absent"
                     ))
@@ -303,7 +304,8 @@ nullModel <- lmer(turnover ~  (1| project_id),
                   REML = FALSE)
 
 fullModel <- lmer(turnover ~ 
-                    hasWomEvNum + 
+                    #hasWomEvNum + 
+                    hasWomenEver +
                     #genNum + 
                     #github_tenure +
                     #gh_tenure_scaled +
@@ -323,6 +325,7 @@ fullModel <- lmer(turnover ~
                   REML = FALSE)
 
 summary(fullModel, corr=FALSE)
+summary(nullModel, corr=FALSE)
 
 plot(fitted(fullModel), residuals(fullModel))
 abline(0,0)
