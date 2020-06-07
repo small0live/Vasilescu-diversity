@@ -286,11 +286,10 @@ ggparcoord(modelDF,
 dev.off()
 
 
-# Models ------------------------------------------------------------------
 
 
+# Single Term Models ------------------------------------------------------
 
-library(lme4)
 modelDF$num_team_scaled <- scale(modelDF$num_team)#[, 1]
 modelDF$num_comments_scaled <- scale(modelDF$num_comments)#[, 1]
 modelDF$num_pull_req_scaled <- scale(modelDF$num_pull_req)#[, 1]
@@ -303,29 +302,160 @@ nullModel <- lmer(turnover ~  (1| project_id),
                   data = modelDFnoNA,
                   REML = FALSE)
 
+summary(nullModel, corr=FALSE)
+
+mod1 <- lmer(turnover ~ 
+               
+               hasWomenEver +
+               
+               #Gini_gh_ten + 
+               #
+               #num_team_scaled +
+               #
+               #num_pull_req_scaled +
+               #
+               #num_comments_scaled +
+               
+               (1 | project_id), 
+             
+             data = modelDFnoNA,
+             REML = FALSE)
+
+mod2 <- lmer(turnover ~ 
+               
+               #hasWomenEver +
+               
+               Gini_gh_ten + 
+               
+               #num_team_scaled +
+               #
+               #num_pull_req_scaled +
+               #
+               #num_comments_scaled +
+               
+               (1 | project_id), 
+             
+             data = modelDFnoNA,
+             REML = FALSE)
+
+mod3 <- lmer(turnover ~ 
+               
+               #hasWomenEver +
+               
+               #Gini_gh_ten + 
+               
+               num_team_scaled +
+               
+               #num_pull_req_scaled +
+               #
+               #num_comments_scaled +
+               
+               (1 | project_id), 
+             
+             data = modelDFnoNA,
+             REML = FALSE)
+
+mod4 <- lmer(turnover ~ 
+               
+               #hasWomenEver +
+               #
+               #Gini_gh_ten + 
+               #
+               #num_team_scaled +
+               
+               num_pull_req_scaled +
+               
+               #num_comments_scaled +
+               
+               (1 | project_id), 
+             
+             data = modelDFnoNA,
+             REML = FALSE)
+
+mod5 <- lmer(turnover ~ 
+               
+               #hasWomenEver +
+               #
+               #Gini_gh_ten + 
+               #
+               #num_team_scaled +
+               
+               #num_pull_req_scaled +
+               
+               num_comments_scaled +
+               
+               (1 | project_id), 
+             
+             data = modelDFnoNA,
+             REML = FALSE)
+
+
+# Full Model ------------------------------------------------------------------
+
+
+
 fullModel <- lmer(turnover ~ 
-                    #hasWomEvNum + 
+                    
                     hasWomenEver +
-                    #genNum + 
-                    #github_tenure +
-                    #gh_tenure_scaled +
-                    #blau_gender + 
+                    
                     Gini_gh_ten + 
-                    #num_team +
+                    
                     num_team_scaled +
-                    #num_pull_req +
+                    
                     num_pull_req_scaled +
-                    #num_comments +
+                    
                     num_comments_scaled +
-                    #(window_idx | project_id),
+                    
                   (1 | project_id), 
-                  #+  
-                  #(1 | window_idx),
+                  
                   data = modelDFnoNA,
                   REML = FALSE)
 
 summary(fullModel, corr=FALSE)
-summary(nullModel, corr=FALSE)
+
+plot(fitted(fullModel), residuals(fullModel))
+abline(0,0)
+hist(residuals(fullModel))
+qqnorm(residuals(fullModel))
+
+#### get p value with logliklihood method
+
+anova(nullModel, fullModel)
+
+
+r2.corr.mer <- function(m) {
+  lmfit <-  lm(model.response(model.frame(m)) ~ fitted(m))
+  summary(lmfit)$adj.r.squared
+}
+
+r2.corr.mer(fullModel)
+r2.corr.mer(fullModel) - r2.corr.mer(nullModel)
+
+#beta(fullModel)
+
+
+# Interactions Model ------------------------------------------------------------------
+
+
+
+fullModel <- lmer(turnover ~ 
+                    
+                    hasWomenEver +
+                    
+                    Gini_gh_ten + 
+                    
+                    num_team_scaled +
+                    
+                    num_pull_req_scaled +
+                    
+                    num_comments_scaled +
+                    
+                    (1 | project_id), 
+                  
+                  data = modelDFnoNA,
+                  REML = FALSE)
+
+summary(fullModel, corr=FALSE)
 
 plot(fitted(fullModel), residuals(fullModel))
 abline(0,0)
