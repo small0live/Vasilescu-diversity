@@ -3,9 +3,10 @@
 
 library(data.table)
 library(DescTools)
+library(effects)
 library(GGally)
 library(ggplot2)
-library(lattice)
+#library(lattice)
 library(lme4)
 library(tidyverse)
 library(Hmisc)
@@ -41,6 +42,28 @@ myDF <- myDF %>%
 myDF <- left_join(myDF, 
                   genStatus)
 
+modelDF <- myDF %>%
+  mutate(genNum = ifelse(gender == "female", 0,
+                         ifelse(gender == "male", 1, 2)),
+         hasWomEvNum = ifelse(hasWomenEver == TRUE, 1, 0)) %>%
+  subset(select = c("project_id",
+                    "window_idx",
+                    #"user_ID",
+                    #"genNum",
+                    #"github_tenure",
+                    #"commits",
+                    "num_team",
+                    "num_pull_req",
+                    "num_issues",
+                    "num_comments",
+                    #"blau_gender",
+                    "Gini_gh_ten",
+                    "hasWomEvNum",
+                    #"hasWomenEver",
+                    "turnover"#,
+                    #"absent"
+  )) %>%
+  distinct(project_id, window_idx, .keep_all = T)
 
 # Classify Language (Paradigm) -------------------------------------------------------
 
@@ -70,6 +93,359 @@ myDF <- left_join(myDF,
 #TEST <- myDF %>%
 #  distinct(project_id, .keep_all = T)
 
+# Plot Distributions ------------------------------------------------------
+
+## user characteristics
+#ggplot(myDF,
+#       aes(x = gender)) +
+#  geom_bar(stat = "count")
+#
+#ggplot(myDF,
+#       aes(x = github_tenure)) +
+#  geom_histogram() ## kind of normal but not really
+#
+#
+#ggplot(myDF,
+#       aes(x = commits)) +
+#  geom_histogram() ## heavy skew
+#
+### group composition
+#ggplot(myDF,
+#       aes(x = blau_gender)) +
+#  geom_histogram() ## heavy skew
+#
+#ggplot(myDF,
+#       aes(x = Gini_gh_ten)) + 
+#  geom_histogram() ## nearly normal, some skew
+#
+### project characteristics
+#
+#wmCheck <- myDF %>%
+#  distinct(project_id, .keep_all =TRUE)
+#
+#ggplot(wmCheck,
+#       aes(x = hasWomenEver)) +
+#  geom_bar(stat = "count")
+#
+#ggplot(myDF,
+#       aes(x = num_team)) + 
+#  geom_histogram() ## heavy skew
+
+#ggplot(myDF,
+#       aes(x = num_issues)) + 
+#  geom_histogram() ## heavy skew
+
+####not sure it makes sense to include these given it's the same num at each timepoint?
+#ggplot(myDF,
+#       aes(x = forks)) +
+#  geom_histogram() ## heavy skew
+#
+#ggplot(myDF,
+#       aes(x = watchers)) +
+#  geom_histogram() ## heavy skew
+
+# Simple Correlations ------------------------------------------------------------
+
+rcorr(as.matrix(modelDF))
+
+ggcorr(modelDF, label = TRUE)
+
+#modelDF.laydee <-  modelDF %>%
+#  subset(hasWomEvNum == 1, select = -12)
+
+#rcorr(as.matrix(modelDF.laydee))
+#
+#ggcorr(modelDF.laydee, label = TRUE)
+
+#modelDF.noLaydee <-  modelDF %>%
+#  subset(hasWomEvNum == 0, select = -c(10,12))
+
+#rcorr(as.matrix(modelDF.noLaydee))
+#
+#ggcorr(modelDF.noLaydee, label = TRUE)
+
+#cor(modelDF,
+#    use = "pairwise.complete.obs"
+#    )
+#
+rcorr(as.matrix(modelDF))
+
+ggcorr(modelDF, label = TRUE)
+
+#png(filename="pairs.png")
+#ggpairs(modelDF) ## not handling missing values, idk what to do rn
+#dev.off()
+
+png(filename="corrpairs.png")
+ggparcoord(modelDF,
+           missing = "exclude")
+dev.off()
+
+
+
+
+# R-squared Function ------------------------------------------------------
+
+r2.corr.mer <- function(m) {
+  lmfit <-  lm(model.response(model.frame(m)) ~ fitted(m))
+  summary(lmfit)$adj.r.squared
+}
+
+
+# Subset Again and Scale Vars ---------------------------------------------
+
+modelDF$num_team_scaled <- scale(modelDF$num_team)#[, 1]
+modelDF$num_comments_scaled <- scale(modelDF$num_comments)#[, 1]
+modelDF$num_pull_req_scaled <- scale(modelDF$num_pull_req)#[, 1]
+modelDF$num_iss_scaled <- scale(modelDF$num_issues)#[, 1]
+#$gh_tenure_scaled <- scale(modelDF$github_tenure)#[, 1]
+
+modelDFnoNA <- modelDF %>%
+  na.omit()
+
+# Construct Single Term Models ------------------------------------------------------
+
+## main effects null model 
+nullModel <- lmer(turnover ~ (1| project_id),
+                  data = modelDFnoNA,
+                  REML = FALSE)
+
+#summary(nullModel, corr=FALSE)
+
+## MODEL 1: HAS_WOMEN
+mod1 <- lmer(turnover ~ hasWomenEver +
+               (1 | project_id), 
+             data = modelDFnoNA,
+             REML = FALSE)
+
+mod2 <- lmer(turnover ~ Gini_gh_ten + (1 | project_id), 
+             
+             data = modelDFnoNA,
+             REML = FALSE)
+
+mod3 <- lmer(turnover ~ 
+               num_team_scaled +
+               (1 | project_id), 
+             
+             data = modelDFnoNA,
+             REML = FALSE)
+
+mod4 <- lmer(turnover ~ 
+               num_pull_req_scaled +
+               
+               (1 | project_id), 
+             
+             data = modelDFnoNA,
+             REML = FALSE)
+
+mod5 <- lmer(turnover ~ num_comments_scaled +
+               
+               (1 | project_id), 
+             
+             data = modelDFnoNA,
+             REML = FALSE)
+
+
+mod6 <- lmer(turnover ~ num_iss_scaled +
+               
+               (1 | project_id), 
+             
+             data = modelDFnoNA,
+             REML = FALSE)
+
+
+
+# Single Term Models Output -----------------------------------------------
+
+## MODEL 1
+summary(mod1, corr=FALSE)
+
+plot(fitted(mod1), residuals(mod1))
+abline(0,0)
+hist(residuals(mod1))
+qqnorm(residuals(mod1))
+
+#### get p value with logliklihood method
+
+anova(nullModel, mod1)
+
+
+r2.corr.mer(mod1)
+r2.corr.mer(mod1) - r2.corr.mer(nullModel)
+
+#e <- allEffects(mod1)
+#print(e)
+
+## MODEL 2
+summary(mod2, corr=FALSE)
+
+plot(fitted(mod2), residuals(mod2))
+abline(0,0)
+hist(residuals(mod2))
+qqnorm(residuals(mod2))
+
+#### get p value with logliklihood method
+
+anova(nullModel, mod2)
+
+
+r2.corr.mer(mod2)
+r2.corr.mer(mod2) - r2.corr.mer(nullModel)
+
+
+## MODEL 3
+summary(mod3, corr=FALSE)
+
+plot(fitted(mod3), residuals(mod3))
+abline(0,0)
+hist(residuals(mod3))
+qqnorm(residuals(mod3))
+
+#### get p value with logliklihood method
+
+anova(nullModel, mod3)
+
+
+r2.corr.mer(mod3)
+r2.corr.mer(mod3) - r2.corr.mer(nullModel)
+
+
+## MODEL 4
+summary(mod4, corr=FALSE)
+
+plot(fitted(mod4), residuals(mod4))
+abline(0,0)
+hist(residuals(mod4))
+qqnorm(residuals(mod4))
+
+#### get p value with logliklihood method
+
+anova(nullModel, mod4)
+
+
+r2.corr.mer(mod4)
+r2.corr.mer(mod4) - r2.corr.mer(nullModel)
+
+
+## MODEL 5
+summary(mod5, corr=FALSE)
+
+plot(fitted(mod5), residuals(mod5))
+abline(0,0)
+hist(residuals(mod5))
+qqnorm(residuals(mod5))
+
+#### get p value with logliklihood method
+
+anova(nullModel, mod5)
+
+
+r2.corr.mer(mod5)
+r2.corr.mer(mod5) - r2.corr.mer(nullModel)
+
+## MODEL 6
+summary(mod6, corr=FALSE)
+
+plot(fitted(mod6), residuals(mod6))
+abline(0,0)
+hist(residuals(mod6))
+qqnorm(residuals(mod6))
+
+#### get p value with logliklihood method
+
+anova(nullModel, mod6)
+
+
+r2.corr.mer(mod6)
+r2.corr.mer(mod6) - r2.corr.mer(nullModel)
+
+# Full Model(DELETE) ------------------------------------------------------------------
+
+
+
+fullModel <- lmer(turnover ~ 
+                    
+                    hasWomenEver +
+                    
+                    Gini_gh_ten + 
+                    
+                    num_team_scaled +
+                    
+                    num_pull_req_scaled +
+                    
+                    num_comments_scaled +
+                    
+                  (1 | project_id), 
+                  
+                  data = modelDFnoNA,
+                  REML = FALSE)
+
+summary(fullModel, corr=FALSE)
+
+plot(fitted(fullModel), residuals(fullModel))
+abline(0,0)
+hist(residuals(fullModel))
+qqnorm(residuals(fullModel))
+
+#### get p value with logliklihood method
+
+anova(nullModel, fullModel)
+
+
+r2.corr.mer(fullModel)
+r2.corr.mer(fullModel) - r2.corr.mer(nullModel)
+
+#beta(fullModel)
+
+
+# Interactions Model ------------------------------------------------------------------
+
+
+nullFModel <- lmer(turnover ~ 
+                    
+                    hasWomenEver +
+                    
+                    Gini_gh_ten +
+                    
+                    num_team_scaled +
+                    
+                    num_pull_req_scaled +
+                    
+                    num_comments_scaled +
+                    
+                    (1 | project_id), 
+                  
+                  data = modelDFnoNA,
+                  REML = FALSE)
+
+fullModel <- lmer(turnover ~ 
+                    hasWomenEver *
+                    Gini_gh_ten *
+                    num_team_scaled *
+                    num_pull_req_scaled *
+                    num_comments_scaled +
+                    (1 | project_id), 
+                  
+                  data = modelDFnoNA,
+                  REML = FALSE)
+
+summary(fullModel, corr=FALSE)
+
+plot(fitted(fullModel), residuals(fullModel))
+abline(0,0)
+hist(residuals(fullModel))
+qqnorm(residuals(fullModel))
+
+#### get p value with logliklihood method
+
+anova(nullFModel, fullModel)
+
+
+
+r2.corr.mer(fullModel)
+r2.corr.mer(fullModel) - r2.corr.mer(nullFModel)
+
+#beta(fullModel)
 # OLDPrepare Data ------------------------------------------------------------
 
 #ks.sizes <- (kitchen.sink %>%
@@ -179,304 +555,6 @@ myDF <- left_join(myDF,
 #                                      shingle(blau_gender,my.intervals),mean))
 #plot(gen.x,logit(gen.y))
 #
-
-# Plot Distributions ------------------------------------------------------
-
-## user characteristics
-#ggplot(myDF,
-#       aes(x = gender)) +
-#  geom_bar(stat = "count")
-#
-#ggplot(myDF,
-#       aes(x = github_tenure)) +
-#  geom_histogram() ## kind of normal but not really
-#
-#
-#ggplot(myDF,
-#       aes(x = commits)) +
-#  geom_histogram() ## heavy skew
-#
-### group composition
-#ggplot(myDF,
-#       aes(x = blau_gender)) +
-#  geom_histogram() ## heavy skew
-#
-#ggplot(myDF,
-#       aes(x = Gini_gh_ten)) + 
-#  geom_histogram() ## nearly normal, some skew
-#
-### project characteristics
-#
-#wmCheck <- myDF %>%
-#  distinct(project_id, .keep_all =TRUE)
-#
-#ggplot(wmCheck,
-#       aes(x = hasWomenEver)) +
-#  geom_bar(stat = "count")
-#
-#ggplot(myDF,
-#       aes(x = num_team)) + 
-#  geom_histogram() ## heavy skew
-#
-####not sure it makes sense to include these given it's the same num at each timepoint?
-#ggplot(myDF,
-#       aes(x = forks)) +
-#  geom_histogram() ## heavy skew
-#
-#ggplot(myDF,
-#       aes(x = watchers)) +
-#  geom_histogram() ## heavy skew
-
-# Simple Correlations ------------------------------------------------------------
-
-modelDF <- myDF %>%
-  mutate(genNum = ifelse(gender == "female", 0,
-                         ifelse(gender == "male", 1, 2)),
-         hasWomEvNum = ifelse(hasWomenEver == TRUE, 1, 0)) %>%
-  subset(select = c("project_id",
-                    "window_idx",
-                    "user_ID",
-                    "genNum",
-                    "github_tenure",
-                    "commits",
-                    "num_team",
-                    "num_pull_req",
-                    "num_comments",
-                    "blau_gender",
-                    "Gini_gh_ten",
-                    #"hasWomEvNum",
-                    "hasWomenEver",
-                    "turnover"#,
-                    #"absent"
-                    ))
-
-rcorr(as.matrix(modelDF))
-
-ggcorr(modelDF, label = TRUE)
-
-modelDF.laydee <-  modelDF %>%
-  subset(hasWomEvNum == 1, select = -12)
-
-rcorr(as.matrix(modelDF.laydee))
-
-ggcorr(modelDF.laydee, label = TRUE)
-
-modelDF.noLaydee <-  modelDF %>%
-  subset(hasWomEvNum == 0, select = -c(10,12))
-
-rcorr(as.matrix(modelDF.noLaydee))
-
-ggcorr(modelDF.noLaydee, label = TRUE)
-
-#cor(modelDF,
-#    use = "pairwise.complete.obs"
-#    )
-#
-rcorr(as.matrix(modelDF))
-
-ggcorr(modelDF, label = TRUE)
-
-#png(filename="pairs.png")
-#ggpairs(modelDF) ## not handling missing values, idk what to do rn
-#dev.off()
-
-png(filename="pairs.png")
-ggparcoord(modelDF,
-           missing = "exclude")
-dev.off()
-
-
-
-
-# Single Term Models ------------------------------------------------------
-
-modelDF$num_team_scaled <- scale(modelDF$num_team)#[, 1]
-modelDF$num_comments_scaled <- scale(modelDF$num_comments)#[, 1]
-modelDF$num_pull_req_scaled <- scale(modelDF$num_pull_req)#[, 1]
-modelDF$gh_tenure_scaled <- scale(modelDF$github_tenure)#[, 1]
-
-modelDFnoNA <- modelDF %>%
-  na.omit()
-
-nullModel <- lmer(turnover ~  (1| project_id),
-                  data = modelDFnoNA,
-                  REML = FALSE)
-
-summary(nullModel, corr=FALSE)
-
-mod1 <- lmer(turnover ~ 
-               
-               hasWomenEver +
-               
-               #Gini_gh_ten + 
-               #
-               #num_team_scaled +
-               #
-               #num_pull_req_scaled +
-               #
-               #num_comments_scaled +
-               
-               (1 | project_id), 
-             
-             data = modelDFnoNA,
-             REML = FALSE)
-
-mod2 <- lmer(turnover ~ 
-               
-               #hasWomenEver +
-               
-               Gini_gh_ten + 
-               
-               #num_team_scaled +
-               #
-               #num_pull_req_scaled +
-               #
-               #num_comments_scaled +
-               
-               (1 | project_id), 
-             
-             data = modelDFnoNA,
-             REML = FALSE)
-
-mod3 <- lmer(turnover ~ 
-               
-               #hasWomenEver +
-               
-               #Gini_gh_ten + 
-               
-               num_team_scaled +
-               
-               #num_pull_req_scaled +
-               #
-               #num_comments_scaled +
-               
-               (1 | project_id), 
-             
-             data = modelDFnoNA,
-             REML = FALSE)
-
-mod4 <- lmer(turnover ~ 
-               
-               #hasWomenEver +
-               #
-               #Gini_gh_ten + 
-               #
-               #num_team_scaled +
-               
-               num_pull_req_scaled +
-               
-               #num_comments_scaled +
-               
-               (1 | project_id), 
-             
-             data = modelDFnoNA,
-             REML = FALSE)
-
-mod5 <- lmer(turnover ~ 
-               
-               #hasWomenEver +
-               #
-               #Gini_gh_ten + 
-               #
-               #num_team_scaled +
-               
-               #num_pull_req_scaled +
-               
-               num_comments_scaled +
-               
-               (1 | project_id), 
-             
-             data = modelDFnoNA,
-             REML = FALSE)
-
-
-# Full Model ------------------------------------------------------------------
-
-
-
-fullModel <- lmer(turnover ~ 
-                    
-                    hasWomenEver +
-                    
-                    Gini_gh_ten + 
-                    
-                    num_team_scaled +
-                    
-                    num_pull_req_scaled +
-                    
-                    num_comments_scaled +
-                    
-                  (1 | project_id), 
-                  
-                  data = modelDFnoNA,
-                  REML = FALSE)
-
-summary(fullModel, corr=FALSE)
-
-plot(fitted(fullModel), residuals(fullModel))
-abline(0,0)
-hist(residuals(fullModel))
-qqnorm(residuals(fullModel))
-
-#### get p value with logliklihood method
-
-anova(nullModel, fullModel)
-
-
-r2.corr.mer <- function(m) {
-  lmfit <-  lm(model.response(model.frame(m)) ~ fitted(m))
-  summary(lmfit)$adj.r.squared
-}
-
-r2.corr.mer(fullModel)
-r2.corr.mer(fullModel) - r2.corr.mer(nullModel)
-
-#beta(fullModel)
-
-
-# Interactions Model ------------------------------------------------------------------
-
-
-
-fullModel <- lmer(turnover ~ 
-                    
-                    hasWomenEver +
-                    
-                    Gini_gh_ten + 
-                    
-                    num_team_scaled +
-                    
-                    num_pull_req_scaled +
-                    
-                    num_comments_scaled +
-                    
-                    (1 | project_id), 
-                  
-                  data = modelDFnoNA,
-                  REML = FALSE)
-
-summary(fullModel, corr=FALSE)
-
-plot(fitted(fullModel), residuals(fullModel))
-abline(0,0)
-hist(residuals(fullModel))
-qqnorm(residuals(fullModel))
-
-#### get p value with logliklihood method
-
-anova(nullModel, fullModel)
-
-
-r2.corr.mer <- function(m) {
-  lmfit <-  lm(model.response(model.frame(m)) ~ fitted(m))
-  summary(lmfit)$adj.r.squared
-}
-
-r2.corr.mer(fullModel)
-r2.corr.mer(fullModel) - r2.corr.mer(nullModel)
-
-#beta(fullModel)
-
 #old Models -------------------------------------------------------------------
 
 
