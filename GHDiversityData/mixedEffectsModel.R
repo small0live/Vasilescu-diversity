@@ -6,7 +6,6 @@ library(DescTools)
 library(effects)
 library(GGally)
 library(ggplot2)
-#library(lattice)
 library(lme4)
 library(tidyverse)
 library(Hmisc)
@@ -59,41 +58,20 @@ modelDF <- myDF %>%
                     #"blau_gender",
                     "Gini_gh_ten",
                     "hasWomEvNum",
-                    #"hasWomenEver",
+                    "hasWomenEver",
                     "turnover"#,
                     #"absent"
   )) %>%
   distinct(project_id, window_idx, .keep_all = T)
 
-# Classify Language (Paradigm) -------------------------------------------------------
-
-## based on Ray et al. (2017) http://dx.doi.org/10.1145/3126905
-
-#eventDr <- ("Visual Basic")
-#declar <- c("ASP", "Puppet", "XSLT")
-#impProc <- c("C", "C++", "C#", "Objective-C", "Java", "Go", "Vala")
-#impScri <- c("CoffeeScript", "JavaScript", "Python", "Groovy", "Perl", "PHP", "Ruby", "Smalltalk", "TypeScript")
-#Funct <- c("Clojure", "Erlang", "Haskell", "Scala", "Emacs Lisp", "Elixir")
-#Scri <- c("Shell", "VimL", "Augeas", "PowerShell")
-#multiPa <- c("JavaScript", "Lua", "FORTRAN", "R", "ActionScript", "Common Lisp", "Standard ML", "Rust", "Racket", 
-#             "Matlab", "OCaml", "Julia", "Dylan")
-#markup <- c("CSS", "AUGEUS", "XML")
-#
-#myDF <- myDF %>%
-#  mutate(langParadigm = ifelse(language %in% impProc, "imperativePocedural",
-#                               ifelse(language %in% impScri, "imperativeScripting",
-#                                      ifelse(language %in% Funct, "functional",
-#                                             ifelse(language %in% multiPa, "multiParadigm",
-#                                                    ifelse(language %in% Scri, "script",
-#                                                           ifelse(language %in% markup, "markup",
-#                                                                  ifelse(language %in% declar, "declarative",
-#                                                                         ifelse(language %in% eventDr, "eventDriven",
-#                                             "HELP")))))))))
-#
-#TEST <- myDF %>%
-#  distinct(project_id, .keep_all = T)
+modelDFnoNA <- modelDF %>%
+  na.omit()
 
 # Plot Distributions ------------------------------------------------------
+
+ggplot(modelDFnoNA,
+       aes(x = turnover)) +
+  geom_histogram() 
 
 ## user characteristics
 #ggplot(myDF,
@@ -184,7 +162,7 @@ dev.off()
 
 
 
-# R-squared Function ------------------------------------------------------
+# R-Squared Function ------------------------------------------------------
 
 r2.corr.mer <- function(m) {
   lmfit <-  lm(model.response(model.frame(m)) ~ fitted(m))
@@ -198,10 +176,6 @@ modelDF$num_team_scaled <- scale(modelDF$num_team)#[, 1]
 modelDF$num_comments_scaled <- scale(modelDF$num_comments)#[, 1]
 modelDF$num_pull_req_scaled <- scale(modelDF$num_pull_req)#[, 1]
 modelDF$num_iss_scaled <- scale(modelDF$num_issues)#[, 1]
-#$gh_tenure_scaled <- scale(modelDF$github_tenure)#[, 1]
-
-modelDFnoNA <- modelDF %>%
-  na.omit()
 
 # Construct Single Term Models ------------------------------------------------------
 
@@ -212,191 +186,146 @@ nullModel <- lmer(turnover ~ (1| project_id),
 
 #summary(nullModel, corr=FALSE)
 
-## MODEL 1: HAS_WOMEN
-mod1 <- lmer(turnover ~ hasWomenEver +
-               (1 | project_id), 
+## MODEL 1: Identifiable Mixed Gender Composition
+mod1 <- lmer(turnover ~ hasWomenEver + (1 | project_id), 
              data = modelDFnoNA,
              REML = FALSE)
 
-mod2 <- lmer(turnover ~ Gini_gh_ten + (1 | project_id), 
-             
+## MODEL 2: Project Tenure Diversity
+mod2 <- lmer(turnover ~ Gini_gh_ten + (1 | project_id),
              data = modelDFnoNA,
              REML = FALSE)
 
-mod3 <- lmer(turnover ~ 
-               num_team_scaled +
-               (1 | project_id), 
-             
+## MODEL 3: Team Size
+#mod3 <- lmer(turnover ~ num_team_scaled + (1 | project_id), 
+mod3 <- lmer(turnover ~ num_team + (1 | project_id),              
              data = modelDFnoNA,
              REML = FALSE)
 
-mod4 <- lmer(turnover ~ 
-               num_pull_req_scaled +
-               
-               (1 | project_id), 
-             
+## MODEL 4: Number of Pull Requests
+#mod4 <- lmer(turnover ~ num_pull_req_scaled + (1 | project_id), 
+mod4 <- lmer(turnover ~ num_pull_req + (1 | project_id),
              data = modelDFnoNA,
              REML = FALSE)
 
-mod5 <- lmer(turnover ~ num_comments_scaled +
-               
-               (1 | project_id), 
-             
+## MODEL 5: Number of Comments
+#mod5 <- lmer(turnover ~ num_comments_scaled + (1 | project_id), 
+mod5 <- lmer(turnover ~ num_comments + (1 | project_id),
              data = modelDFnoNA,
              REML = FALSE)
 
-
-mod6 <- lmer(turnover ~ num_iss_scaled +
-               
-               (1 | project_id), 
-             
+## MODEL 6: Number of Issues
+#mod6 <- lmer(turnover ~ num_iss_scaled + (1 | project_id), 
+mod6 <- lmer(turnover ~ num_issues + (1 | project_id),              
              data = modelDFnoNA,
              REML = FALSE)
 
 
 
-# Single Term Models Output -----------------------------------------------
+# Single Term Models Summary and anova Output -----------------------------------------------
 
 ## MODEL 1
 summary(mod1, corr=FALSE)
+anova(nullModel, mod1) #### get p value with logliklihood method
 
-plot(fitted(mod1), residuals(mod1))
-abline(0,0)
-hist(residuals(mod1))
-qqnorm(residuals(mod1))
-
-#### get p value with logliklihood method
-
-anova(nullModel, mod1)
-
-
-r2.corr.mer(mod1)
-r2.corr.mer(mod1) - r2.corr.mer(nullModel)
-
-#e <- allEffects(mod1)
-#print(e)
 
 ## MODEL 2
 summary(mod2, corr=FALSE)
-
-plot(fitted(mod2), residuals(mod2))
-abline(0,0)
-hist(residuals(mod2))
-qqnorm(residuals(mod2))
-
-#### get p value with logliklihood method
-
 anova(nullModel, mod2)
 
 
+## MODEL 3
+summary(mod3, corr=FALSE)
+anova(nullModel, mod3)
+
+
+## MODEL 4
+summary(mod4, corr=FALSE)
+anova(nullModel, mod4)
+
+
+## MODEL 5
+summary(mod5, corr=FALSE)
+anova(nullModel, mod5)
+
+
+## MODEL 6
+summary(mod6, corr=FALSE)
+anova(nullModel, mod6)
+
+# Single Term Models R Squared -----------------------------------------------
+
+## MODEL 1
+r2.corr.mer(mod1)
+r2.corr.mer(mod1) - r2.corr.mer(nullModel)
+
+
+## MODEL 2
 r2.corr.mer(mod2)
 r2.corr.mer(mod2) - r2.corr.mer(nullModel)
 
 
 ## MODEL 3
-summary(mod3, corr=FALSE)
-
-plot(fitted(mod3), residuals(mod3))
-abline(0,0)
-hist(residuals(mod3))
-qqnorm(residuals(mod3))
-
-#### get p value with logliklihood method
-
-anova(nullModel, mod3)
-
-
 r2.corr.mer(mod3)
 r2.corr.mer(mod3) - r2.corr.mer(nullModel)
 
 
 ## MODEL 4
-summary(mod4, corr=FALSE)
-
-plot(fitted(mod4), residuals(mod4))
-abline(0,0)
-hist(residuals(mod4))
-qqnorm(residuals(mod4))
-
-#### get p value with logliklihood method
-
-anova(nullModel, mod4)
-
-
 r2.corr.mer(mod4)
 r2.corr.mer(mod4) - r2.corr.mer(nullModel)
 
 
 ## MODEL 5
-summary(mod5, corr=FALSE)
+r2.corr.mer(mod5)
+r2.corr.mer(mod5) - r2.corr.mer(nullModel)
 
+
+## MODEL 6
+r2.corr.mer(mod6)
+r2.corr.mer(mod6) - r2.corr.mer(nullModel)
+
+# Single Term Models Residuals Check  -----------------------------------------------
+
+## MODEL 1
+plot(fitted(mod1), residuals(mod1))
+abline(0,0)
+hist(residuals(mod1))
+qqnorm(residuals(mod1))
+
+
+## MODEL 2
+plot(fitted(mod2), residuals(mod2))
+abline(0,0)
+hist(residuals(mod2))
+qqnorm(residuals(mod2))
+
+
+## MODEL 3
+plot(fitted(mod3), residuals(mod3))
+abline(0,0)
+hist(residuals(mod3))
+qqnorm(residuals(mod3))
+
+
+## MODEL 4
+plot(fitted(mod4), residuals(mod4))
+abline(0,0)
+hist(residuals(mod4))
+qqnorm(residuals(mod4))
+
+
+## MODEL 5
 plot(fitted(mod5), residuals(mod5))
 abline(0,0)
 hist(residuals(mod5))
 qqnorm(residuals(mod5))
 
-#### get p value with logliklihood method
-
-anova(nullModel, mod5)
-
-
-r2.corr.mer(mod5)
-r2.corr.mer(mod5) - r2.corr.mer(nullModel)
 
 ## MODEL 6
-summary(mod6, corr=FALSE)
-
 plot(fitted(mod6), residuals(mod6))
 abline(0,0)
 hist(residuals(mod6))
 qqnorm(residuals(mod6))
-
-#### get p value with logliklihood method
-
-anova(nullModel, mod6)
-
-
-r2.corr.mer(mod6)
-r2.corr.mer(mod6) - r2.corr.mer(nullModel)
-
-# Full Model(DELETE) ------------------------------------------------------------------
-
-
-
-fullModel <- lmer(turnover ~ 
-                    
-                    hasWomenEver +
-                    
-                    Gini_gh_ten + 
-                    
-                    num_team_scaled +
-                    
-                    num_pull_req_scaled +
-                    
-                    num_comments_scaled +
-                    
-                  (1 | project_id), 
-                  
-                  data = modelDFnoNA,
-                  REML = FALSE)
-
-summary(fullModel, corr=FALSE)
-
-plot(fitted(fullModel), residuals(fullModel))
-abline(0,0)
-hist(residuals(fullModel))
-qqnorm(residuals(fullModel))
-
-#### get p value with logliklihood method
-
-anova(nullModel, fullModel)
-
-
-r2.corr.mer(fullModel)
-r2.corr.mer(fullModel) - r2.corr.mer(nullModel)
-
-#beta(fullModel)
-
 
 # Interactions Model ------------------------------------------------------------------
 
@@ -446,190 +375,3 @@ r2.corr.mer(fullModel)
 r2.corr.mer(fullModel) - r2.corr.mer(nullFModel)
 
 #beta(fullModel)
-# OLDPrepare Data ------------------------------------------------------------
-
-#ks.sizes <- (kitchen.sink %>%
-#               subset(gender != "None") %>%
-#               mutate(sizeClass=
-#                        ifelse(num_team < 11, "small", 
-#                               ifelse(num_team > 10 & num_team < 30, "medium", 
-#                                      "large"
-#                               ))))
-#
-#
-#wID <- sort(c(unique(ks.sizes$windows), 1))
-#ks.sizes$window_idx <- factor(as.character(ks.sizes$window_idx), levels = wID)
-#
-#pID <- (c(unique(ks.sizes$project_id)))
-#ks.sizes$project_id <- as.character(ks.sizes$project_id)
-#
-#ks.sizes$project_id_f <- factor(ks.sizes$project_id, levels = pID)
-#
-#ks.sizes$num_team <- as.numeric(as.character(ks.sizes$num_team))
-#ks.sizes$github_tenures <- as.numeric(as.character(ks.sizes$github_tenures))
-#ks.sizes$commits <- as.numeric(as.character(ks.sizes$commits))
-#
-#ks.sizes$gh_tenure_scaled <- scale(ks.sizes$github_tenures)[, 1]
-#ks.sizes$gh_tenure_log <- log(ks.sizes$github_tenures)
-#
-#
-# OLDSubset by Team Size -----------------------------------------------------
-
-#ks.small <- (ks.sizes %>%
-#               subset(sizeClass == "small")
-#             ) %>%
-#  group_by(project_id, window_idx) %>%
-#  mutate(Gini_gh_ten = Gini(github_tenures)) %>%
-#  ungroup
-#
-#ks.med <- (ks.sizes %>%
-#             subset(sizeClass == "medium")
-#           ) %>%
-#  group_by(project_id, window_idx) %>%
-#  mutate(Gini_gh_ten = Gini(github_tenures)) %>%
-#  ungroup
-#
-#ks.large <- (ks.sizes %>%
-#               subset(sizeClass == "large")
-#             ) %>%
-#  group_by(project_id, window_idx) %>%
-#  mutate(Gini_gh_ten = Gini(github_tenures)) %>%
-#  ungroup
-#
-
-
-# OLDInspect Relationships ---------------------------------------------------
-
-#tapply.shingle <- function(x,s,fn,...) {
-#  result <- c()
-#  for(l in levels(s)) { 
-#    x1 <- x[s > l[1] & s < l[2]]
-#    result <- c(result, fn(x1,...))
-#  }
-#  result
-#  }
-#logit <- function(x) {
-#  log(x/(1-x))
-#}
-#
-#my.intervals <- cbind(1:29-0.5,1:29+1.5)
-#
-#smallResponse <- ks.small$leavesNextQ
-#medResponse <- ks.med$leavesNextQ
-#largeResponse <- ks.large$leavesNextQ
-#
-#ks.small$Gen <- ifelse(ks.small$gender=="female",1,0)
-#ks.med$Gen <- ifelse(ks.med$gender=="female",1,0)
-#ks.large$Gen <- ifelse(ks.large$gender=="female",1,0)
-#
-#
-#size.x <- with(ks.large,tapply.shingle(num_team,
-#                                      shingle(num_team,my.intervals),mean))
-#size.y <- with(ks.large,tapply.shingle(largeResponse,
-#                                      shingle(num_team,my.intervals),mean))
-#plot(size.x,logit(size.y))
-#
-#ght.x <- with(ks.large,tapply.shingle(github_tenures,
-#                                          shingle(github_tenures,my.intervals),mean))
-#ght.y <- with(ks.large,tapply.shingle(largeResponse,
-#                                            shingle(github_tenures,my.intervals),mean))
-#plot(ght.x,logit(ght.y))
-##plot(ght.x,ght.y)
-#
-#gen.y <- with(ks.large,tapply.shingle(largeResponse,
-#                                      shingle(Gen,my.intervals),mean))
-#gen.x <- with(ks.large,tapply.shingle(Gen,
-#                                        shingle(Gen,my.intervals),mean))
-#plot(gen.x,gen.y)
-#
-#ght.x <- with(ks.large,tapply.shingle(github_tenures,
-#                                      shingle(Gini_gh_ten,my.intervals),mean))
-#ght.y <- with(ks.large,tapply.shingle(largeResponse,
-#                                      shingle(Gini_gh_ten,my.intervals),mean))
-#plot(ght.x,logit(ght.y))
-##plot(ght.x,ght.y)
-#
-#gen.y <- with(ks.large,tapply.shingle(largeResponse,
-#                                      shingle(blau_gender,my.intervals),mean))
-#gen.x <- with(ks.large,tapply.shingle(Gen,
-#                                      shingle(blau_gender,my.intervals),mean))
-#plot(gen.x,logit(gen.y))
-#
-#old Models -------------------------------------------------------------------
-
-
-#summary(glm(largeResponse ~ github_tenures,ks.large,
-#            family="binomial"))$deviance
-#
-#summary(glm(largeResponse ~ log(github_tenures),ks.large,
-#              family="binomial"))$deviance
-#
-#summary(glm(largeResponse ~ Gen,ks.large,
-#            family="binomial"))$deviance
-#
-##summary(glm(largeResponse ~ log(Gen),ks.large,
-##              family="binomial"))$deviance
-#
-#
-#largeT.glmm <- glmer(leavesNextQ ~ Gen + log(github_tenures) + log(num_team) +
-#                      (1 | project_id_f) + 
-#                      (1 | window_idx), 
-#                    ks.large,
-#                    family="binomial",
-#                    nAGQ = 1)
-#largeT.glmm
-#
-## create three models (one for small, one for medium, one for large)
-
-#mSmall <- glmer(leavesNextQ ~ gender + log(github_tenures) + num_team +
-#                  (1 | project_id_f) + (1 | window_idx), 
-#                data = ks.small, 
-#                family = binomial(link="logit"), 
-#                control = glmerControl(optimizer = "bobyqa"),
-#                nAGQ = 1)
-#
-#mMedium <- glmer(leavesNextQ ~ gender + gh_tenure_scaled + blau_gender + Gini_gh_ten +
-#                   (1 | project_id_f) + (1 | window_idx), 
-#                 data = ks.med, 
-#                 family = binomial(link="logit"), 
-#                 control = glmerControl(optimizer = "bobyqa"),
-#                 nAGQ = 1)
-
-#mLarge <- glmer(leavesNextQ ~ gender + gh_tenure_scaled + blau_gender + Gini_gh_ten +
-#                  (1 | project_id_f) + (1 | window_idx), 
-#                data = ks.large, 
-#                family = binomial(link="logit"), 
-#                control = glmerControl(optimizer = "bobyqa"),
-#                nAGQ = 1)
-
-
-
-#used 10 integration points. 
-#As we use more integration points, the approximation becomes more accurate converging to the ML estimates; 
-#however, more points are more computationally demanding and can be extremely slow or even intractable with today’s technology.
-
-# print the mod results without correlations among fixed effects
-#print(mSmall, corr = FALSE)
-#print(mMedium, corr = FALSE)
-#print(mLarge, corr = FALSE)
-#
-#se <- sqrt(diag(vcov(mSmall)))
-#se <- sqrt(diag(vcov(mMedium)))
-#se <- sqrt(diag(vcov(mLarge)))
-#
-## table of estimates with 95% CI
-#(tabSmall <- cbind(Est = fixef(mSmall), LL = fixef(mSmall) - 1.96 * se, UL = fixef(mSmall) + 1.96 *
-#                se))
-#
-#(tabMed <- cbind(Est = fixef(mMedium), LL = fixef(mMedium) - 1.96 * se, UL = fixef(mMedium) + 1.96 *
-#                se))
-#
-#(tabLarge <- cbind(Est = fixef(mLarge), LL = fixef(mLarge) - 1.96 * se, UL = fixef(mLarge) + 1.96 *
-#                se))
-#
-##If we wanted odds ratios instead of coefficients on the logit scale, we could exponentiate the estimates and CIs.
-#
-#exp(tabSmall)
-#exp(tabMed)
-#exp(tabLarge)
-#
