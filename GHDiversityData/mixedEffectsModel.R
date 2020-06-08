@@ -164,18 +164,21 @@ dev.off()
 
 # R-Squared Function ------------------------------------------------------
 
+# credit to Jarrett Byrnes
 r2.corr.mer <- function(m) {
   lmfit <-  lm(model.response(model.frame(m)) ~ fitted(m))
-  summary(lmfit)$adj.r.squared
+  summary(lmfit)$r.squared
 }
 
 
-# Subset Again and Scale Vars ---------------------------------------------
+# Prep for Model  ---------------------------------------------
 
-modelDF$num_team_scaled <- scale(modelDF$num_team)#[, 1]
-modelDF$num_comments_scaled <- scale(modelDF$num_comments)#[, 1]
-modelDF$num_pull_req_scaled <- scale(modelDF$num_pull_req)#[, 1]
-modelDF$num_iss_scaled <- scale(modelDF$num_issues)#[, 1]
+#modelDF$num_team_scaled <- scale(modelDF$num_team)#[, 1]
+#modelDF$num_comments_scaled <- scale(modelDF$num_comments)#[, 1]
+#modelDF$num_pull_req_scaled <- scale(modelDF$num_pull_req)#[, 1]
+#modelDF$num_iss_scaled <- scale(modelDF$num_issues)#[, 1]
+#
+#modelDFnoNA$project_idF <- factor(modelDFnoNA$project_id, levels = unique(modelDFnoNA$project_id))
 
 # Construct Single Term Models ------------------------------------------------------
 
@@ -327,32 +330,16 @@ abline(0,0)
 hist(residuals(mod6))
 qqnorm(residuals(mod6))
 
-# Interactions Model ------------------------------------------------------------------
+# Interactions Model (2 way) ------------------------------------------------------------------
 
-
-nullFModel <- lmer(turnover ~ 
-                    
-                    hasWomenEver +
-                    
-                    Gini_gh_ten +
-                    
-                    num_team_scaled +
-                    
-                    num_pull_req_scaled +
-                    
-                    num_comments_scaled +
-                    
-                    (1 | project_id), 
-                  
-                  data = modelDFnoNA,
-                  REML = FALSE)
+nullFModel <- lmer(turnover ~ hasWomenEver + num_pull_req +
+                     (1 | project_id), 
+                   data = modelDFnoNA,
+                   REML = FALSE)
 
 fullModel <- lmer(turnover ~ 
                     hasWomenEver *
-                    Gini_gh_ten *
-                    num_team_scaled *
-                    num_pull_req_scaled *
-                    num_comments_scaled +
+                    num_pull_req  +
                     (1 | project_id), 
                   
                   data = modelDFnoNA,
@@ -375,3 +362,39 @@ r2.corr.mer(fullModel)
 r2.corr.mer(fullModel) - r2.corr.mer(nullFModel)
 
 #beta(fullModel)
+
+# Interactions Model (EVERYTING) ------------------------------------------------------------------
+
+
+nullFModel <- lmer(turnover ~ 
+                    hasWomenEver +
+                    Gini_gh_ten +
+                    num_team_scaled +
+                    num_pull_req_scaled +
+                    num_comments_scaled +
+                    (1 | project_id), 
+                                  data = modelDFnoNA,
+                  REML = FALSE)
+
+fullModel <- lmer(turnover ~ 
+                    hasWomenEver *
+                    Gini_gh_ten *
+                    num_team_scaled *
+                    num_pull_req_scaled *
+                    num_comments_scaled +
+                    (1 | project_id), 
+                  data = modelDFnoNA,
+                  REML = FALSE)
+
+summary(fullModel, corr=FALSE)
+
+plot(fitted(fullModel), residuals(fullModel))
+abline(0,0)
+hist(residuals(fullModel))
+qqnorm(residuals(fullModel))
+
+anova(nullFModel, fullModel)
+
+r2.corr.mer(fullModel)
+r2.corr.mer(fullModel) - r2.corr.mer(nullFModel)
+
