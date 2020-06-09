@@ -12,7 +12,6 @@ setwd("~/Documents/GitHub/Vasilescu-diversity/GHDiversityData")
 myDF <- fread("wmxn_user_data.csv")
 
 
-
 # Create Functions ---------------------------------------------------------
 
 `%not_in%` <- purrr::negate(`%in%`) 

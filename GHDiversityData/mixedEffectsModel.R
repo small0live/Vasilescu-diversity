@@ -352,11 +352,7 @@ abline(0,0)
 hist(residuals(fullModel))
 qqnorm(residuals(fullModel))
 
-#### get p value with logliklihood method
-
 anova(nullFModel, fullModel)
-
-
 
 r2.corr.mer(fullModel)
 r2.corr.mer(fullModel) - r2.corr.mer(nullFModel)
