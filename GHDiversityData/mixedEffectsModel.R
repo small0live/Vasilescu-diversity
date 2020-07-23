@@ -44,7 +44,7 @@ myDF <- left_join(myDF,
 modelDF <- myDF %>%
   mutate(genNum = ifelse(gender == "female", 0,
                          ifelse(gender == "male", 1, 2)),
-         hasWomEvNum = ifelse(hasWomenEver == TRUE, 1, 0)) %>%
+         hasWomEvNum = ifelse(hasWomenEver == TRUE, "yes", "no")) %>%
   subset(select = c("project_id",
                     "window_idx",
                     #"user_ID",
@@ -189,10 +189,23 @@ nullModel <- lmer(turnover ~ (1| project_id),
 
 #summary(nullModel, corr=FALSE)
 
+modelDFnoNA$hasWomEvNum <- factor(modelDFnoNA$hasWomEvNum,
+                                  levels = c("yes", "no"))
+
 ## MODEL 1: Identifiable Mixed Gender Composition
-mod1 <- lmer(turnover ~ hasWomenEver + (1 | project_id), 
+mod1 <- lmer(turnover ~ hasWomEvNum + (1 | project_id), 
              data = modelDFnoNA,
              REML = FALSE)
+
+summary(glht(mod1, 
+             linfct=mcp(hasWomEvNum = "Tukey"),
+             test = adjusted("holm")))
+
+emmeans(mod1,
+        pairwise ~ hasWomEvNum,
+        adjust = "Tukey")
+
+
 
 ## MODEL 2: Project Tenure Diversity
 mod2 <- lmer(turnover ~ Gini_gh_ten + (1 | project_id),
